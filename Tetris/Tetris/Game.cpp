@@ -2,19 +2,26 @@
 
 void Game::update()
 {
-    field.moveFigure(Direction::DOWN);
-    field.draw();
+    field.drawBorders();
+    moveFigure(Direction::DOWN);
 }
 
 void Game::run()
 {
-    field.spawnFigure();
+    spawnFigure();
     while (true)
     {
         processInput();
         update();
+        draw(field);
         Sleep(SLEEP);
     }
+}
+
+void Game::draw(Screen& field)
+{
+    currentFigure.draw(field);
+    field.draw();
 }
 
 void Game::processInput()
@@ -27,20 +34,54 @@ void Game::processInput()
             key = _getch();
             if (key == LEFT)
             {
-                field.moveFigure(Direction::LEFT);
+                moveFigure(Direction::LEFT);
             }
             else if (key == RIGHT)
             {
-                field.moveFigure(Direction::RIGHT);
+                moveFigure(Direction::RIGHT);
             }
         }
         else if (key == COUNTER_CLOCK)
         {
-            field.rotateFigure(Direction::LEFT);
+            rotateFigure(Direction::LEFT);
         }
         else if (key == CLOCK)
         {
-            field.rotateFigure(Direction::RIGHT);
+            rotateFigure(Direction::RIGHT);
         }
     }
+}
+
+vector<vector<int>> Game::rotateClockwise(const vector<vector<int>>& shape)
+{
+    int rows = shape.size();
+    int cols = shape[0].size();
+    vector<vector<int>> rotated(cols, vector<int>(rows));
+
+    for (int i = 0; i < rows; ++i)
+    {
+        for (int j = 0; j < cols; ++j)
+        {
+            rotated[j][rows - 1 - i] = shape[i][j];
+        }
+    }
+
+    return rotated;
+}
+
+vector<vector<int>> Game::rotateCounterClockwise(const vector<vector<int>>& shape)
+{
+    int rows = shape.size();
+    int cols = shape[0].size();
+    vector<vector<int>> rotated(cols, vector<int>(rows));
+
+    for (int i = 0; i < rows; ++i)
+    {
+        for (int j = 0; j < cols; ++j)
+        {
+            rotated[cols - 1 - j][i] = shape[i][j];
+        }
+    }
+
+    return rotated;
 }
