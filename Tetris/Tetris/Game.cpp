@@ -1,15 +1,25 @@
 #include "Tetris.h"
-
 void Game::update()
 {
+    // Рисуем границы поля
     field.drawBorders();
-    moveFigure(Direction::DOWN);
+    // Проверяем возможность движения вниз
+    if (currentFigure.canMove(Direction::DOWN, placedFigures))
+    {
+        currentFigure.move(Direction::DOWN, placedFigures);
+    }
+    else
+    {
+        // Если движение вниз невозможно:
+        placeFigure();           // Фиксируем фигуру
+        checkLines();            // Проверяем заполненные линии
+        spawnFigure();          // Создаём новую фигуру
+    }
 }
-
 void Game::run()
 {
     spawnFigure();
-    while (true)
+    while (!isGameOver)
     {
         processInput();
         update();
@@ -17,13 +27,21 @@ void Game::run()
         Sleep(SLEEP);
     }
 }
-
 void Game::draw(Screen& field)
 {
+    for (int y = 0; y < SCREEN_HEIGHT; y++)
+    {
+        for (int x = 0; x < SCREEN_WIDTH / 2; x++)
+        {
+            if (placedFigures[y][x])
+            {
+                field.putSymb(SQUARE, { x, y });
+            }
+        }
+    }
     currentFigure.draw(field);
     field.draw();
 }
-
 void Game::processInput()
 {
     if (_kbhit())
@@ -32,56 +50,83 @@ void Game::processInput()
         if (key == ARROW)
         {
             key = _getch();
-            if (key == LEFT)
+            // Обработка движения влево
+            if (key == LEFT && currentFigure.canMove(Direction::LEFT, placedFigures))
             {
-                moveFigure(Direction::LEFT);
+                currentFigure.move(Direction::LEFT, placedFigures);
             }
-            else if (key == RIGHT)
+            // Обработка движения вправо
+            else if (key == RIGHT && currentFigure.canMove(Direction::RIGHT, placedFigures))
             {
-                moveFigure(Direction::RIGHT);
+                currentFigure.move(Direction::RIGHT, placedFigures);
             }
         }
+        // Обработка поворота против часовой стрелки
         else if (key == COUNTER_CLOCK)
         {
-            rotateFigure(Direction::LEFT);
+            currentFigure.rotate(Direction::LEFT, placedFigures);
         }
+        // Обработка поворота по часовой стрелке
         else if (key == CLOCK)
         {
-            rotateFigure(Direction::RIGHT);
+            currentFigure.rotate(Direction::RIGHT, placedFigures);
         }
     }
 }
-
-vector<vector<int>> Game::rotateClockwise(const vector<vector<int>>& shape)
+void Game::placeFigure()
 {
-    int rows = shape.size();
-    int cols = shape[0].size();
-    vector<vector<int>> rotated(cols, vector<int>(rows));
-
-    for (int i = 0; i < rows; ++i)
+    // Получаем текущую фигуру и её позицию
+    vector<vector<bool>> shape = currentFigure.getShape();
+    Point pos = currentFigure.getPosition();
+    // Добавляем фигуру в массив размещённых фигур
+    for (int row = 0; row < shape.size(); row++)
     {
-        for (int j = 0; j < cols; ++j)
+        for (int col = 0; col < shape[row].size(); col++)
         {
-            rotated[j][rows - 1 - i] = shape[i][j];
+            if (shape[row][col])
+            {
+                int x = pos.x + col;
+                int y = pos.y + row;
+                // Проверяем границы перед размещением
+                if (y >= 0 && y < SCREEN_HEIGHT - 1 && x >= 0 && x < (SCREEN_WIDTH / 2 - 1))
+                {
+                    placedFigures[y][x] = true;
+                }
+            }
         }
     }
-
-    return rotated;
 }
-
-vector<vector<int>> Game::rotateCounterClockwise(const vector<vector<int>>& shape)
+void Game::checkLines()
 {
-    int rows = shape.size();
-    int cols = shape[0].size();
-    vector<vector<int>> rotated(cols, vector<int>(rows));
-
-    for (int i = 0; i < rows; ++i)
+    // Проверяем каждую строку снизу вверх
+    for (int row = SCREEN_HEIGHT - 1; row >= 0; row--)
     {
-        for (int j = 0; j < cols; ++j)
+        bool isLineFull = true;
+        // Проверяем заполненность строки
+        for (int col = 0; col < SCREEN_WIDTH / 2; col++)
         {
-            rotated[cols - 1 - j][i] = shape[i][j];
+            if (!placedFigures[row][col])
+            {
+                isLineFull = false;
+                break;
+            }
+        }
+        // Если строка заполнена
+        if (isLineFull)
+        {
+            // Сдвигаем все строки выше текущей вниз
+            for (int y = row; y > 0; y--)
+            {
+                for (int x = 0; x < SCREEN_WIDTH / 2; x++)
+                {
+                    placedFigures[y][x] = placedFigures[y - 1][x];
+                }
+            }
+            // Очищаем верхнюю строку
+            for (int x = 0; x < SCREEN_WIDTH / 2; x++)
+            {
+                placedFigures[0][x] = false;
+            }
         }
     }
-
-    return rotated;
 }

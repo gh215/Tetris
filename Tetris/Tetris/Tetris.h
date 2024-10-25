@@ -1,4 +1,5 @@
 ﻿#pragma once
+#pragma warning(disable: 4018)
 #include <iostream>
 #include <string>
 #include <utility>
@@ -24,7 +25,7 @@ class Game;
 enum class Direction { DOWN, LEFT, RIGHT };
 
 const int SCREEN_HEIGHT = 30;
-const int SCREEN_WIDTH = 30;
+const int SCREEN_WIDTH = 44;
 const symbol SQUARE = { '[', ']' };
 const char EMPTY_CELL = ' ';
 const int ARROW = 224;
@@ -50,6 +51,18 @@ private:
 	void showConsoleCursor(bool showFlag);
 public:
 	Screen() { clear(); showConsoleCursor(false); }
+	vector<vector<bool>> getOccupiedCells() 
+	{
+		vector<vector<bool>> occupied(SCREEN_HEIGHT, vector<bool>(SCREEN_WIDTH / 2, false));
+		for (int y = 0; y < SCREEN_HEIGHT; y++) 
+		{
+			for (int x = 0; x < SCREEN_WIDTH / 2; x++) 
+			{
+				occupied[y][x] = (activeBuffer[y][x * 2] != EMPTY_CELL);
+			}
+		}
+		return occupied;
+	}
 	bool putSymb(symbol symb, Point p)
 	{
 		if (p.y < 0 || p.y > SCREEN_HEIGHT - 1) return false;
@@ -80,18 +93,17 @@ public:
 				activeBuffer[y][x] = nextBuffer[y][x];
 				drawSymb(activeBuffer[y][x], x, y);
 			}
-			
+
 		}
 		clear();
 	}
 	void clear()
 	{
-		for (size_t y = 0; y < SCREEN_WIDTH; y++)
+		for (size_t y = 0; y < SCREEN_HEIGHT; y++) 
 		{
-			for (size_t x = 0; x < SCREEN_HEIGHT; x++)
+			for (size_t x = 0; x < SCREEN_WIDTH; x++) 
 			{
 				nextBuffer[y][x] = EMPTY_CELL;
-
 			}
 		}
 	}
@@ -103,24 +115,58 @@ class Figure
 private:
 	vector<vector<bool>> shape;
 	Point position;
+	Screen screen;
 public:
-	Figure(vector<vector<bool>> shape, Point pos) : shape(shape), position(pos) {}
+	Figure(vector<vector<bool>> shape, Point pos) : shape(shape), position(pos), screen() {}
+
+	vector<vector<bool>> rotateClockwise(vector<vector<bool>>& shape);
+	vector<vector<bool>> rotateCounterClockwise(vector<vector<bool>>& shape);
+
+	vector<vector<bool>> getShape() const { return shape; }
+	Point getPosition() const { return position; }
+
 	void draw(Screen& screen)
 	{
 		screen.putMatrix(shape, position, SQUARE);
 	}
-	void rotate(Direction dir)
+	void rotate(Direction dir, vector<vector<bool>>& field)
 	{
-		if (dir == Direction::LEFT)
+		if (canRotate(dir, field)) 
 		{
-
-		}
-		else if (dir == Direction::RIGHT)
-		{
-
+			if (dir == Direction::LEFT) 
+			{
+				shape = rotateCounterClockwise(shape);
+			}
+			else if (dir == Direction::RIGHT) 
+			{
+				shape = rotateClockwise(shape);
+			}
 		}
 	}
-	void move(Direction dir);
+	void move(Direction dir, vector<vector<bool>>& field)
+	{
+		if (canMove(dir, field))
+		{
+			switch (dir) {
+			case Direction::DOWN:
+				position.y++;
+				break;
+			case Direction::LEFT:
+				position.x--;
+				break;
+			case Direction::RIGHT:
+				position.x++;
+				break;
+			}
+		}
+	}
+
+	bool canMove(Direction dir, vector<vector<bool>>& field);
+	bool canRotate(Direction dir, vector<vector<bool>>& field);
+
+	bool checkCollision(vector<vector<bool>>& field);
+	void placeFigure();
+
 };
 
 class Game
@@ -129,21 +175,22 @@ private:
 	Screen field;
 	Figure currentFigure;
 	Point position;
+	vector<vector<bool>> placedFigures;
 	bool isGameOver;
 public:
-	Game() : field(), isGameOver(false), currentFigure({ {1, 1, 1, 1} }, { 0, 0 }), position({0,0}) {}
+	Game() : field(), isGameOver(false), currentFigure({ {1, 1, 1, 1} }, { 0, 0 }), position({ 0, 0 }), placedFigures(SCREEN_HEIGHT, vector<bool>(SCREEN_WIDTH / 2, false)) {}
 	void spawnFigure();
 	void draw(Screen& field);
 
-	void moveFigure(Direction dir) { currentFigure.move(dir); }
-	void rotateFigure(Direction dir) { currentFigure.rotate(dir); }
-
-	vector<vector<int>> rotateClockwise(const vector<vector<int>>& shape);
-	vector<vector<int>> rotateCounterClockwise(const vector<vector<int>>& shape);
+	void moveFigure(Direction dir) { currentFigure.move(dir, placedFigures); }
+	void rotateFigure(Direction dir) { currentFigure.rotate(dir, placedFigures); }
 
 	void run();
 	void processInput();
 	void update();
+
+	void placeFigure();
+	void checkLines();
 };
 
 
