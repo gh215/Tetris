@@ -1,11 +1,11 @@
-#include "Tetris.h"
+п»ї#include "Tetris.h"
 
 bool Figure::canMove(Direction dir, vector<vector<bool>>& field)
 {
-	// Создаём новую позицию, копируя текущую
+	// РЎРѕР·РґР°С‘Рј РЅРѕРІСѓСЋ РїРѕР·РёС†РёСЋ, РєРѕРїРёСЂСѓСЏ С‚РµРєСѓС‰СѓСЋ
 	Point newPosition = position;
 
-	// Определяем новую позицию в зависимости от направления
+	// РћРїСЂРµРґРµР»СЏРµРј РЅРѕРІСѓСЋ РїРѕР·РёС†РёСЋ РІ Р·Р°РІРёСЃРёРјРѕСЃС‚Рё РѕС‚ РЅР°РїСЂР°РІР»РµРЅРёСЏ
 	switch (dir)
 	{
 	case Direction::DOWN:
@@ -19,24 +19,24 @@ bool Figure::canMove(Direction dir, vector<vector<bool>>& field)
 		break;
 	}
 
-	// Проверяем каждую ячейку фигуры
+	// РџСЂРѕРІРµСЂСЏРµРј РєР°Р¶РґСѓСЋ СЏС‡РµР№РєСѓ С„РёРіСѓСЂС‹
 	for (size_t row = 0; row < shape.size(); row++)
 	{
 		for (size_t col = 0; col < shape[row].size(); col++)
 		{
-			// Если в данной позиции есть часть фигуры
+			// Р•СЃР»Рё РІ РґР°РЅРЅРѕР№ РїРѕР·РёС†РёРё РµСЃС‚СЊ С‡Р°СЃС‚СЊ С„РёРіСѓСЂС‹
 			if (shape[row][col])
 			{
 				int newX = newPosition.x + col;
 				int newY = newPosition.y + row;
 
-				// Проверяем выход за границы поля
+				// РџСЂРѕРІРµСЂСЏРµРј РІС‹С…РѕРґ Р·Р° РіСЂР°РЅРёС†С‹ РїРѕР»СЏ
 				if (newX < 1 || newX >= SCREEN_WIDTH / 2 - 1 || newY >= SCREEN_HEIGHT - 1)
 				{
 					return false;
 				}
 
-				// Проверяем столкновение с другими фигурами
+				// РџСЂРѕРІРµСЂСЏРµРј СЃС‚РѕР»РєРЅРѕРІРµРЅРёРµ СЃ РґСЂСѓРіРёРјРё С„РёРіСѓСЂР°РјРё
 				if (newY >= 0 && field[newY][newX])
 				{
 					return false;
@@ -44,16 +44,16 @@ bool Figure::canMove(Direction dir, vector<vector<bool>>& field)
 			}
 		}
 	}
-	return true; // Если все проверки пройдены, движение возможно
+	return true; // Р•СЃР»Рё РІСЃРµ РїСЂРѕРІРµСЂРєРё РїСЂРѕР№РґРµРЅС‹, РґРІРёР¶РµРЅРёРµ РІРѕР·РјРѕР¶РЅРѕ
 }
 
 bool Figure::canRotate(Direction dir, vector<vector<bool>>& field)
 {
-	// Создаём копию текущей фигуры
+	// РЎРѕР·РґР°С‘Рј РєРѕРїРёСЋ С‚РµРєСѓС‰РµР№ С„РёРіСѓСЂС‹
 	vector<vector<bool>> rotatedShape = shape;
 	int n = shape.size();
 
-	// Поворачиваем копию в нужном направлении
+	// РџРѕРІРѕСЂР°С‡РёРІР°РµРј РєРѕРїРёСЋ РІ РЅСѓР¶РЅРѕРј РЅР°РїСЂР°РІР»РµРЅРёРё
 	if (dir == Direction::LEFT)
 	{
 		rotatedShape = rotateCounterClockwise(shape);
@@ -63,18 +63,18 @@ bool Figure::canRotate(Direction dir, vector<vector<bool>>& field)
 		rotatedShape = rotateClockwise(shape);
 	}
 
-	// Проверяем возможность поворота
+	// РџСЂРѕРІРµСЂСЏРµРј РІРѕР·РјРѕР¶РЅРѕСЃС‚СЊ РїРѕРІРѕСЂРѕС‚Р°
 	for (int row = 0; row < rotatedShape.size(); row++)
 	{
 		for (int col = 0; col < rotatedShape[row].size(); col++)
 		{
-			// Если в данной позиции есть часть фигуры
+			// Р•СЃР»Рё РІ РґР°РЅРЅРѕР№ РїРѕР·РёС†РёРё РµСЃС‚СЊ С‡Р°СЃС‚СЊ С„РёРіСѓСЂС‹
 			if (rotatedShape[row][col])
 			{
 				int newX = position.x + col;
 				int newY = position.y + row;
 
-				// Проверяем границы и столкновения
+				// РџСЂРѕРІРµСЂСЏРµРј РіСЂР°РЅРёС†С‹ Рё СЃС‚РѕР»РєРЅРѕРІРµРЅРёСЏ
 				if (newX < 0 || newX >= SCREEN_WIDTH / 2 || newY >= SCREEN_HEIGHT || (newY >= 0 && field[newY][newX]))
 				{
 					return false;
@@ -82,53 +82,53 @@ bool Figure::canRotate(Direction dir, vector<vector<bool>>& field)
 			}
 		}
 	}
-	return true; // Если все проверки пройдены, поворот возможен
+	return true; // Р•СЃР»Рё РІСЃРµ РїСЂРѕРІРµСЂРєРё РїСЂРѕР№РґРµРЅС‹, РїРѕРІРѕСЂРѕС‚ РІРѕР·РјРѕР¶РµРЅ
 }
 
 bool Figure::checkCollision(vector<vector<bool>>& field)
 {
-	// Проверяем каждую ячейку фигуры
+	// РџСЂРѕРІРµСЂСЏРµРј РєР°Р¶РґСѓСЋ СЏС‡РµР№РєСѓ С„РёРіСѓСЂС‹
 	for (int row = 0; row < shape.size(); row++)
 	{
 		for (int col = 0; col < shape[row].size(); col++)
 		{
-			// Если в данной позиции есть часть фигуры
+			// Р•СЃР»Рё РІ РґР°РЅРЅРѕР№ РїРѕР·РёС†РёРё РµСЃС‚СЊ С‡Р°СЃС‚СЊ С„РёРіСѓСЂС‹
 			if (shape[row][col])
 			{
 				int newX = position.x + col;
 				int newY = position.y + row;
 
-				// Проверяем выход за границы
+				// РџСЂРѕРІРµСЂСЏРµРј РІС‹С…РѕРґ Р·Р° РіСЂР°РЅРёС†С‹
 				if (newX < 0 || newX >= SCREEN_WIDTH / 2 || newY >= SCREEN_HEIGHT)
 				{
-					return true; // Есть столкновение с границей
+					return true; // Р•СЃС‚СЊ СЃС‚РѕР»РєРЅРѕРІРµРЅРёРµ СЃ РіСЂР°РЅРёС†РµР№
 				}
 
-				// Проверяем столкновение с другими фигурами
+				// РџСЂРѕРІРµСЂСЏРµРј СЃС‚РѕР»РєРЅРѕРІРµРЅРёРµ СЃ РґСЂСѓРіРёРјРё С„РёРіСѓСЂР°РјРё
 				if (newY >= 0 && field[newY][newX])
 				{
-					return true; // Есть столкновение с другой фигурой
+					return true; // Р•СЃС‚СЊ СЃС‚РѕР»РєРЅРѕРІРµРЅРёРµ СЃ РґСЂСѓРіРѕР№ С„РёРіСѓСЂРѕР№
 				}
 			}
 		}
 	}
-	return false; // Столкновений нет
+	return false; // РЎС‚РѕР»РєРЅРѕРІРµРЅРёР№ РЅРµС‚
 }
 
 void Figure::placeFigure()
 {
-	// Проходим по всем ячейкам фигуры
+	// РџСЂРѕС…РѕРґРёРј РїРѕ РІСЃРµРј СЏС‡РµР№РєР°Рј С„РёРіСѓСЂС‹
 	for (size_t row = 0; row < shape.size(); row++)
 	{
 		for (size_t col = 0; col < shape[row].size(); col++)
 		{
-			// Если в данной позиции есть часть фигуры
+			// Р•СЃР»Рё РІ РґР°РЅРЅРѕР№ РїРѕР·РёС†РёРё РµСЃС‚СЊ С‡Р°СЃС‚СЊ С„РёРіСѓСЂС‹
 			if (shape[row][col])
 			{
 				int x = position.x + col;
 				int y = position.y + row;
 
-				// Размещаем символ только если фигура в видимой области
+				// Р Р°Р·РјРµС‰Р°РµРј СЃРёРјРІРѕР» С‚РѕР»СЊРєРѕ РµСЃР»Рё С„РёРіСѓСЂР° РІ РІРёРґРёРјРѕР№ РѕР±Р»Р°СЃС‚Рё
 				if (y >= 0)
 				{
 					screen.putSymb(SQUARE, { x, y });

@@ -1,19 +1,19 @@
-#include "Tetris.h"
+п»ї#include "Tetris.h"
 void Game::update()
 {
-    // Рисуем границы поля
+    // Р РёСЃСѓРµРј РіСЂР°РЅРёС†С‹ РїРѕР»СЏ
     field.drawBorders();
-    // Проверяем возможность движения вниз
+    // РџСЂРѕРІРµСЂСЏРµРј РІРѕР·РјРѕР¶РЅРѕСЃС‚СЊ РґРІРёР¶РµРЅРёСЏ РІРЅРёР·
     if (currentFigure.canMove(Direction::DOWN, placedFigures))
     {
         currentFigure.move(Direction::DOWN, placedFigures);
     }
     else
     {
-        // Если движение вниз невозможно:
-        placeFigure();           // Фиксируем фигуру
-        checkLines();            // Проверяем заполненные линии
-        spawnFigure();          // Создаём новую фигуру
+        // Р•СЃР»Рё РґРІРёР¶РµРЅРёРµ РІРЅРёР· РЅРµРІРѕР·РјРѕР¶РЅРѕ:
+        placeFigure();           // Р¤РёРєСЃРёСЂСѓРµРј С„РёРіСѓСЂСѓ
+        checkLines();            // РџСЂРѕРІРµСЂСЏРµРј Р·Р°РїРѕР»РЅРµРЅРЅС‹Рµ Р»РёРЅРёРё
+        spawnFigure();          // РЎРѕР·РґР°С‘Рј РЅРѕРІСѓСЋ С„РёРіСѓСЂСѓ
     }
 }
 void Game::run()
@@ -50,23 +50,23 @@ void Game::processInput()
         if (key == ARROW)
         {
             key = _getch();
-            // Обработка движения влево
+            // РћР±СЂР°Р±РѕС‚РєР° РґРІРёР¶РµРЅРёСЏ РІР»РµРІРѕ
             if (key == LEFT && currentFigure.canMove(Direction::LEFT, placedFigures))
             {
                 currentFigure.move(Direction::LEFT, placedFigures);
             }
-            // Обработка движения вправо
+            // РћР±СЂР°Р±РѕС‚РєР° РґРІРёР¶РµРЅРёСЏ РІРїСЂР°РІРѕ
             else if (key == RIGHT && currentFigure.canMove(Direction::RIGHT, placedFigures))
             {
                 currentFigure.move(Direction::RIGHT, placedFigures);
             }
         }
-        // Обработка поворота против часовой стрелки
+        // РћР±СЂР°Р±РѕС‚РєР° РїРѕРІРѕСЂРѕС‚Р° РїСЂРѕС‚РёРІ С‡Р°СЃРѕРІРѕР№ СЃС‚СЂРµР»РєРё
         else if (key == COUNTER_CLOCK)
         {
             currentFigure.rotate(Direction::LEFT, placedFigures);
         }
-        // Обработка поворота по часовой стрелке
+        // РћР±СЂР°Р±РѕС‚РєР° РїРѕРІРѕСЂРѕС‚Р° РїРѕ С‡Р°СЃРѕРІРѕР№ СЃС‚СЂРµР»РєРµ
         else if (key == CLOCK)
         {
             currentFigure.rotate(Direction::RIGHT, placedFigures);
@@ -75,10 +75,10 @@ void Game::processInput()
 }
 void Game::placeFigure()
 {
-    // Получаем текущую фигуру и её позицию
+    // РџРѕР»СѓС‡Р°РµРј С‚РµРєСѓС‰СѓСЋ С„РёРіСѓСЂСѓ Рё РµС‘ РїРѕР·РёС†РёСЋ
     vector<vector<bool>> shape = currentFigure.getShape();
     Point pos = currentFigure.getPosition();
-    // Добавляем фигуру в массив размещённых фигур
+    // Р”РѕР±Р°РІР»СЏРµРј С„РёРіСѓСЂСѓ РІ РјР°СЃСЃРёРІ СЂР°Р·РјРµС‰С‘РЅРЅС‹С… С„РёРіСѓСЂ
     for (int row = 0; row < shape.size(); row++)
     {
         for (int col = 0; col < shape[row].size(); col++)
@@ -87,7 +87,7 @@ void Game::placeFigure()
             {
                 int x = pos.x + col;
                 int y = pos.y + row;
-                // Проверяем границы перед размещением
+                // РџСЂРѕРІРµСЂСЏРµРј РіСЂР°РЅРёС†С‹ РїРµСЂРµРґ СЂР°Р·РјРµС‰РµРЅРёРµРј
                 if (y >= 0 && y < SCREEN_HEIGHT - 1 && x >= 0 && x < (SCREEN_WIDTH / 2 - 1))
                 {
                     placedFigures[y][x] = true;
@@ -98,11 +98,11 @@ void Game::placeFigure()
 }
 void Game::checkLines()
 {
-    // Проверяем каждую строку снизу вверх
+    // РџСЂРѕРІРµСЂСЏРµРј РєР°Р¶РґСѓСЋ СЃС‚СЂРѕРєСѓ СЃРЅРёР·Сѓ РІРІРµСЂС…
     for (int row = SCREEN_HEIGHT - 1; row >= 0; row--)
     {
         bool isLineFull = true;
-        // Проверяем заполненность строки
+        // РџСЂРѕРІРµСЂСЏРµРј Р·Р°РїРѕР»РЅРµРЅРЅРѕСЃС‚СЊ СЃС‚СЂРѕРєРё
         for (int col = 0; col < SCREEN_WIDTH / 2; col++)
         {
             if (!placedFigures[row][col])
@@ -111,10 +111,10 @@ void Game::checkLines()
                 break;
             }
         }
-        // Если строка заполнена
+        // Р•СЃР»Рё СЃС‚СЂРѕРєР° Р·Р°РїРѕР»РЅРµРЅР°
         if (isLineFull)
         {
-            // Сдвигаем все строки выше текущей вниз
+            // РЎРґРІРёРіР°РµРј РІСЃРµ СЃС‚СЂРѕРєРё РІС‹С€Рµ С‚РµРєСѓС‰РµР№ РІРЅРёР·
             for (int y = row; y > 0; y--)
             {
                 for (int x = 0; x < SCREEN_WIDTH / 2; x++)
@@ -122,7 +122,7 @@ void Game::checkLines()
                     placedFigures[y][x] = placedFigures[y - 1][x];
                 }
             }
-            // Очищаем верхнюю строку
+            // РћС‡РёС‰Р°РµРј РІРµСЂС…РЅСЋСЋ СЃС‚СЂРѕРєСѓ
             for (int x = 0; x < SCREEN_WIDTH / 2; x++)
             {
                 placedFigures[0][x] = false;
