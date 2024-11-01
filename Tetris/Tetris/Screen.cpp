@@ -9,75 +9,24 @@ void Screen::showConsoleCursor(bool showFlag)
 	SetConsoleCursorInfo(out, &cursorInfo);
 }
 
-void Screen::drawBorders()
+void Screen::drawRect(int x, int y, int width, int height, symbol border)
 {
-	// Проходим по всей высоте экрана
-	for (int y = 0; y < SCREEN_HEIGHT; ++y)
-	{
-		// Если это верхняя или нижняя строка
-		if (y == 0 || y == SCREEN_HEIGHT - 1)
-		{
-		
-			drawSymb(' ', 0, y);  // Рисуем пробел в начале строки
-			for (int x = 1; x < SCREEN_WIDTH - 1; ++x)
-			{
-				drawSymb('-', x, y);
-			}
-			drawSymb(' ', SCREEN_WIDTH - 1, y);  // Рисуем пробел в конце строки
-		}
-		else
-		{
-			// Для остальных строк рисуем вертикальные границы
-			drawSymb('|', 0, y);                    // Левая граница
-			drawSymb(' ', 1, y);                    // Отступ после левой границы
-			drawSymb(' ', SCREEN_WIDTH - 2, y);     // Отступ перед правой границей
-			drawSymb('|', SCREEN_WIDTH - 1, y);     // Правая граница
-		}
-	}
+    if (x < 0 || y < 0 || x + width > SCREEN_WIDTH / 2 || y + height > SCREEN_HEIGHT)
+    {
+        return;
+    }
+
+    for (int i = 0; i < width; ++i)
+    {
+        putSymb(border, { x + i, y });
+        putSymb(border, { x + i, y + height - 1 });
+    }
+
+    for (int j = 1; j < height - 1; ++j)
+    {
+        putSymb(border, { x, y + j });
+        putSymb(border, { x + width - 1, y + j });
+    }
 }
 
-void Game::spawnFigure()
-{
-	vector<vector<vector<bool>>> shapes =
-	{
-		{{0,0,0,0,0},
-		 {0,0,0,0,0},
-		 {0,1,1,1,1},
-		 {0,0,0,0,0},
-		 {0,0,0,0,0}},
-		{{0,0,0,0,0},
-		 {0,0,0,0,0},
-		 {0,1,1,1,0},
-		 {0,0,1,0,0},
-		 {0,0,0,0,0}},
-		{{0,0,0,0,0},
-		 {0,0,1,1,0},
-		 {0,0,1,1,0},
-		 {0,0,0,0,0},
-		 {0,0,0,0,0}},
-		{{0,0,0,0,0},
-		 {0,0,1,0,0},
-		 {0,0,1,0,0},
-		 {0,0,1,1,0},
-		 {0,0,0,0,0}},
-		{{0,0,0,0,0},
-		 {0,0,1,0,0},
-		 {0,0,1,0,0},
-		 {0,1,1,0,0},
-		 {0,0,0,0,0}},
-		{{0,0,0,0,0},
-		 {0,0,0,0,0},
-		 {0,0,1,1,0},
-		 {0,1,1,0,0},
-		 {0,0,0,0,0}},
-	    {{0,0,0,0,0},
-		 {0,0,0,0,0},
-		 {0,1,1,0,0},
-		 {0,0,1,1,0},
-		 {0,0,0,0,0}}
-	};
-
-	int randomIndex = rand() % shapes.size();
-	currentFigure = Figure(shapes[randomIndex], { SCREEN_WIDTH / 4 - 2, 0 });
-}
 

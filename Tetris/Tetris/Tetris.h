@@ -21,6 +21,7 @@ typedef pair<char, char> symbol;
 class Screen;
 class Figure;
 class Game;
+class Heap;
 
 enum class Direction { DOWN, LEFT, RIGHT };
 
@@ -30,10 +31,13 @@ const symbol SQUARE = { '[', ']' };
 const char EMPTY_CELL = ' ';
 const int ARROW = 224;
 const int LEFT = 75;
+const int SPACE = 32;
 const int RIGHT = 77;
+const int DOWN = 80;
 const int CLOCK = 'e';
 const int COUNTER_CLOCK = 'q';
-const int SLEEP = 300;
+const int SLEEP = 200;
+const uint64_t HORIZONTAL_SLEEP = 50;  
 
 
 class Screen
@@ -49,28 +53,18 @@ private:
 		cout << c;
 	}
 	void showConsoleCursor(bool showFlag);
+	int logicalToPhysicalX(int x) const { return x * 2; }
 public:
 	Screen() { clear(); showConsoleCursor(false); }
-	vector<vector<bool>> getOccupiedCells() 
-	{
-		vector<vector<bool>> occupied(SCREEN_HEIGHT, vector<bool>(SCREEN_WIDTH / 2, false));
-		for (int y = 0; y < SCREEN_HEIGHT; y++) 
-		{
-			for (int x = 0; x < SCREEN_WIDTH / 2; x++) 
-			{
-				occupied[y][x] = (activeBuffer[y][x * 2] != EMPTY_CELL);
-			}
-		}
-		return occupied;
-	}
 	bool putSymb(symbol symb, Point p)
 	{
 		if (p.y < 0 || p.y > SCREEN_HEIGHT - 1) return false;
 		if (p.x < 0 || p.x > SCREEN_WIDTH / 2 - 1) return false;
 		if (!isprint(symb.first) || !isprint(symb.second)) return false;
 
-		nextBuffer[p.y][p.x * 2] = symb.first;
-		nextBuffer[p.y][p.x * 2 + 1] = symb.second;
+		int physicalX = logicalToPhysicalX(p.x);
+		nextBuffer[p.y][physicalX] = symb.first;
+		nextBuffer[p.y][physicalX + 1] = symb.second;
 		return true;
 	}
 	void putMatrix(vector<vector<bool>> m, Point p, const symbol symb)
@@ -107,7 +101,7 @@ public:
 			}
 		}
 	}
-	void drawBorders();
+	void drawRect(int x, int y, int width, int height, symbol border);
 };
 
 class Figure
@@ -115,12 +109,11 @@ class Figure
 private:
 	vector<vector<bool>> shape;
 	Point position;
-	Screen screen;
 public:
-	Figure(vector<vector<bool>> shape, Point pos) : shape(shape), position(pos), screen() {}
+	Figure(vector<vector<bool>> shape, Point pos) : shape(shape), position(pos) {}
 
-	vector<vector<bool>> rotateClockwise(vector<vector<bool>>& shape);
-	vector<vector<bool>> rotateCounterClockwise(vector<vector<bool>>& shape);
+	vector<vector<bool>> rotate(bool clockwise);
+	bool checkPosition(const vector<vector<bool>>& testShape, Point testPos, const vector<vector<bool>>& screen);
 
 	vector<vector<bool>> getShape() const { return shape; }
 	Point getPosition() const { return position; }
@@ -129,23 +122,23 @@ public:
 	{
 		screen.putMatrix(shape, position, SQUARE);
 	}
-	void rotate(Direction dir, vector<vector<bool>>& field)
+	void rotate(Direction dir, vector<vector<bool>>& screen)
 	{
-		if (canRotate(dir, field)) 
+		if (canRotate(dir, screen)) 
 		{
 			if (dir == Direction::LEFT) 
 			{
-				shape = rotateCounterClockwise(shape);
+				shape = rotate(false);
 			}
 			else if (dir == Direction::RIGHT) 
 			{
-				shape = rotateClockwise(shape);
+				shape = rotate(true);
 			}
 		}
 	}
-	void move(Direction dir, vector<vector<bool>>& field)
+	void move(Direction dir, vector<vector<bool>>& screen)
 	{
-		if (canMove(dir, field))
+		if (canMove(dir, screen))
 		{
 			switch (dir) {
 			case Direction::DOWN:
@@ -161,36 +154,64 @@ public:
 		}
 	}
 
-	bool canMove(Direction dir, vector<vector<bool>>& field);
-	bool canRotate(Direction dir, vector<vector<bool>>& field);
-
-	bool checkCollision(vector<vector<bool>>& field);
-	void placeFigure();
-
+	bool canMove(Direction dir, vector<vector<bool>>& screen);
+	bool canRotate(Direction dir, vector<vector<bool>>& screen);
 };
 
+class Heap
+{
+private:
+	vector<vector<bool>> blocks;
+	Screen& screen;
+public:
+	Heap(Screen& scr) : screen(scr)
+	{
+		blocks.resize(SCREEN_HEIGHT, vector<bool>(SCREEN_WIDTH / 2, false));
+	}
+
+	void placeFigure(Figure& figure, vector<vector<bool>>& placedFigures);
+	bool checkCollision(vector<vector<bool>>& screen, vector<vector<bool>>& shape, Point position);
+	void checkLines(vector<vector<bool>>& placedFigures);
+	void displayFigure(vector<vector<bool>>& placedFigures);
+};
+ 
 class Game
 {
 private:
-	Screen field;
+	Screen screen;
 	Figure currentFigure;
 	Point position;
+	Heap heap;
 	vector<vector<bool>> placedFigures;
 	bool isGameOver;
+	bool isFastFall;
+	void drawSymb(char c, size_t x, size_t y)
+	{
+		static const HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+		COORD coord = { (SHORT)x, (SHORT)y };
+		SetConsoleCursorPosition(hOut, coord);
+		cout << c;
+	}
 public:
-	Game() : field(), isGameOver(false), currentFigure({ {1, 1, 1, 1} }, { 0, 0 }), position({ 0, 0 }), placedFigures(SCREEN_HEIGHT, vector<bool>(SCREEN_WIDTH / 2, false)) {}
+	Game() : screen(),
+		currentFigure({ {1, 1, 1, 1} }, { 0, 0 }),
+		heap(screen),
+		position({0,0}),
+		isGameOver(false),
+		isFastFall(false),
+		placedFigures(SCREEN_HEIGHT, vector<bool>(SCREEN_WIDTH / 2, false)) {}
 	void spawnFigure();
-	void draw(Screen& field);
+	void draw(Screen& screen);
 
 	void moveFigure(Direction dir) { currentFigure.move(dir, placedFigures); }
 	void rotateFigure(Direction dir) { currentFigure.rotate(dir, placedFigures); }
+	void drawBorders();
 
 	void run();
 	void processInput();
 	void update();
 
-	void placeFigure();
-	void checkLines();
+	void dropFigure();
 };
 
 

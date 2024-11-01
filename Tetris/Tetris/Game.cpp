@@ -1,18 +1,16 @@
 ﻿#include "Tetris.h"
 void Game::update()
 {
-    // Рисуем границы поля
-    field.drawBorders();
-    // Проверяем возможность движения вниз
+    drawBorders();
+
     if (currentFigure.canMove(Direction::DOWN, placedFigures))
     {
         currentFigure.move(Direction::DOWN, placedFigures);
     }
     else
     {
-        // Если движение вниз невозможно:
-        placeFigure();           // Фиксируем фигуру
-        checkLines();            // Проверяем заполненные линии
+        heap.placeFigure(currentFigure, placedFigures);           // Фиксируем фигуру
+        heap.checkLines(placedFigures);            // Проверяем заполненные линии
         spawnFigure();          // Создаём новую фигуру
     }
 }
@@ -23,25 +21,30 @@ void Game::run()
     {
         processInput();
         update();
-        draw(field);
+        draw(screen);
         Sleep(SLEEP);
     }
 }
-void Game::draw(Screen& field)
+
+void Game::draw(Screen& screen)
 {
-    for (int y = 0; y < SCREEN_HEIGHT; y++)
-    {
-        for (int x = 0; x < SCREEN_WIDTH / 2; x++)
-        {
-            if (placedFigures[y][x])
-            {
-                field.putSymb(SQUARE, { x, y });
-            }
-        }
-    }
-    currentFigure.draw(field);
-    field.draw();
+    //Heap.draw()
+    heap.displayFigure(placedFigures);
+    currentFigure.draw(screen);
+    screen.draw();
 }
+
+void Game::dropFigure()
+{
+    while (currentFigure.canMove(Direction::DOWN, placedFigures))
+    {
+        currentFigure.move(Direction::DOWN, placedFigures);
+    }
+    heap.placeFigure(currentFigure, placedFigures);
+    heap.checkLines(placedFigures);
+    spawnFigure();
+}
+
 void Game::processInput()
 {
     if (_kbhit())
@@ -50,83 +53,99 @@ void Game::processInput()
         if (key == ARROW)
         {
             key = _getch();
-            // Обработка движения влево
             if (key == LEFT && currentFigure.canMove(Direction::LEFT, placedFigures))
             {
                 currentFigure.move(Direction::LEFT, placedFigures);
             }
-            // Обработка движения вправо
             else if (key == RIGHT && currentFigure.canMove(Direction::RIGHT, placedFigures))
             {
                 currentFigure.move(Direction::RIGHT, placedFigures);
             }
         }
-        // Обработка поворота против часовой стрелки
+        else if (key == SPACE)
+        {
+            dropFigure();
+        }
         else if (key == COUNTER_CLOCK)
         {
             currentFigure.rotate(Direction::LEFT, placedFigures);
         }
-        // Обработка поворота по часовой стрелке
         else if (key == CLOCK)
         {
             currentFigure.rotate(Direction::RIGHT, placedFigures);
         }
+        FlushConsoleInputBuffer(GetStdHandle(STD_INPUT_HANDLE));
     }
 }
-void Game::placeFigure()
+
+void Game::drawBorders()
 {
-    // Получаем текущую фигуру и её позицию
-    vector<vector<bool>> shape = currentFigure.getShape();
-    Point pos = currentFigure.getPosition();
-    // Добавляем фигуру в массив размещённых фигур
-    for (int row = 0; row < shape.size(); row++)
+    // Проходим по всей высоте экрана
+    for (int y = 0; y < SCREEN_HEIGHT; ++y)
     {
-        for (int col = 0; col < shape[row].size(); col++)
+        // Если это верхняя или нижняя строка
+        if (y == 0 || y == SCREEN_HEIGHT - 1)
         {
-            if (shape[row][col])
+
+            drawSymb(' ', 0, y);  // Рисуем пробел в начале строки
+            for (int x = 1; x < SCREEN_WIDTH - 1; ++x)
             {
-                int x = pos.x + col;
-                int y = pos.y + row;
-                // Проверяем границы перед размещением
-                if (y >= 0 && y < SCREEN_HEIGHT - 1 && x >= 0 && x < (SCREEN_WIDTH / 2 - 1))
-                {
-                    placedFigures[y][x] = true;
-                }
+                drawSymb('-', x, y);
             }
+            drawSymb(' ', SCREEN_WIDTH - 1, y);  // Рисуем пробел в конце строки
+        }
+        else
+        {
+            // Для остальных строк рисуем вертикальные границы
+            drawSymb('|', 0, y);                    // Левая граница
+            drawSymb(' ', 1, y);                    // Отступ после левой границы
+            drawSymb(' ', SCREEN_WIDTH - 2, y);     // Отступ перед правой границей
+            drawSymb('|', SCREEN_WIDTH - 1, y);     // Правая граница
         }
     }
 }
-void Game::checkLines()
+
+void Game::spawnFigure()
 {
-    // Проверяем каждую строку снизу вверх
-    for (int row = SCREEN_HEIGHT - 1; row >= 0; row--)
+    vector<vector<vector<bool>>> shapes =
     {
-        bool isLineFull = true;
-        // Проверяем заполненность строки
-        for (int col = 0; col < SCREEN_WIDTH / 2; col++)
-        {
-            if (!placedFigures[row][col])
-            {
-                isLineFull = false;
-                break;
-            }
-        }
-        // Если строка заполнена
-        if (isLineFull)
-        {
-            // Сдвигаем все строки выше текущей вниз
-            for (int y = row; y > 0; y--)
-            {
-                for (int x = 0; x < SCREEN_WIDTH / 2; x++)
-                {
-                    placedFigures[y][x] = placedFigures[y - 1][x];
-                }
-            }
-            // Очищаем верхнюю строку
-            for (int x = 0; x < SCREEN_WIDTH / 2; x++)
-            {
-                placedFigures[0][x] = false;
-            }
-        }
-    }
+        {{0,0,0,0,0},
+         {0,0,0,0,0},
+         {0,1,1,1,1},
+         {0,0,0,0,0},
+         {0,0,0,0,0}},
+        {{0,0,0,0,0},
+         {0,0,0,0,0},
+         {0,1,1,1,0},
+         {0,0,1,0,0},
+         {0,0,0,0,0}},
+        {{0,0,0,0,0},
+         {0,0,1,1,0},
+         {0,0,1,1,0},
+         {0,0,0,0,0},
+         {0,0,0,0,0}},
+        {{0,0,0,0,0},
+         {0,0,1,0,0},
+         {0,0,1,0,0},
+         {0,0,1,1,0},
+         {0,0,0,0,0}},
+        {{0,0,0,0,0},
+         {0,0,1,0,0},
+         {0,0,1,0,0},
+         {0,1,1,0,0},
+         {0,0,0,0,0}},
+        {{0,0,0,0,0},
+         {0,0,0,0,0},
+         {0,0,1,1,0},
+         {0,1,1,0,0},
+         {0,0,0,0,0}},
+        {{0,0,0,0,0},
+         {0,0,0,0,0},
+         {0,1,1,0,0},
+         {0,0,1,1,0},
+         {0,0,0,0,0}}
+    };
+
+    int randomIndex = rand() % shapes.size();
+    currentFigure = Figure(shapes[randomIndex], { SCREEN_WIDTH / 4 - 2, 0 });
 }
