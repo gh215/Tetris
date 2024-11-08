@@ -10,24 +10,11 @@
 
 using namespace std;
 
-struct Point
-{
-	int x;
-	int y;
-};
+const int FIELD_HEIGHT = 30;
+const int FIELD_WIDTH = 44;
+const int SLEEP = 200;
+const int HORIZONTAL_MOVE_SLEEP = 50;
 
-typedef pair<char, char> symbol;
-
-class Screen;
-class Figure;
-class Game;
-class Heap;
-
-enum class Direction { DOWN, LEFT, RIGHT };
-
-const int SCREEN_HEIGHT = 30;
-const int SCREEN_WIDTH = 44;
-const symbol SQUARE = { '[', ']' };
 const char EMPTY_CELL = ' ';
 const int ARROW = 224;
 const int LEFT = 75;
@@ -36,16 +23,41 @@ const int RIGHT = 77;
 const int DOWN = 80;
 const int CLOCK = 'e';
 const int COUNTER_CLOCK = 'q';
-const int SLEEP = 200;
-const uint64_t HORIZONTAL_SLEEP = 50;  
 
+struct Point
+{
+	int x;
+	int y;
+};
+
+typedef pair<char, char> symbol;
+
+enum class Direction { DOWN, LEFT, RIGHT };
+
+const symbol SQUARE = { '[', ']' };
+
+class Screen;
+class Figure;
+class Game;
+class Heap;
+
+class Clock 
+{
+private:
+	long ticks;
+public:
+	Clock() : ticks(0) {}
+	void tick() { ticks++; }
+	long getTicks() { return ticks; }
+};
 
 class Screen
 {
 private:
-	char nextBuffer[SCREEN_HEIGHT][SCREEN_WIDTH];
-	char activeBuffer[SCREEN_HEIGHT][SCREEN_WIDTH];
-	void drawSymb(char c, size_t x, size_t y)
+	char nextBuffer[FIELD_HEIGHT][FIELD_WIDTH];
+	char activeBuffer[FIELD_HEIGHT][FIELD_WIDTH];
+
+	void drawSymb(char c, int x, int y)
 	{
 		static const HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
 		COORD coord = { (SHORT)x, (SHORT)y };
@@ -53,13 +65,21 @@ private:
 		cout << c;
 	}
 	void showConsoleCursor(bool showFlag);
-	int logicalToPhysicalX(int x) const { return x * 2; }
 public:
-	Screen() { clear(); showConsoleCursor(false); }
+	Screen() 
+	{ 
+		clear();
+		showConsoleCursor(false); 
+	}
+	int logicalWidth() const { return FIELD_WIDTH / 2; }
+	int logicalHeight() const { return FIELD_HEIGHT; }
+
+	int logicalToPhysicalX(int x) const { return x * 2; }
+	int logicalToPhysicalY(int y) const { return y; }
 	bool putSymb(symbol symb, Point p)
 	{
-		if (p.y < 0 || p.y > SCREEN_HEIGHT - 1) return false;
-		if (p.x < 0 || p.x > SCREEN_WIDTH / 2 - 1) return false;
+		if (p.y < 0 || p.y > logicalHeight() - 1) return false;
+		if (p.x < 0 || p.x >= logicalWidth() - 1) return false;
 		if (!isprint(symb.first) || !isprint(symb.second)) return false;
 
 		int physicalX = logicalToPhysicalX(p.x);
@@ -71,7 +91,7 @@ public:
 	{
 		for (int row = 0; row < m.size(); row++)
 		{
-			for (int col = 0; col < m.size(); col++)
+			for (int col = 0; col < m[row].size(); col++)
 			{
 				if (m[row][col]) putSymb(symb, { p.x + col, p.y + row });
 			}
@@ -79,9 +99,9 @@ public:
 	}
 	void draw()
 	{
-		for (size_t x = 0; x < SCREEN_WIDTH; x++)
+		for (size_t x = 0; x < FIELD_WIDTH; x++)
 		{
-			for (size_t y = 0; y < SCREEN_HEIGHT; y++)
+			for (size_t y = 0; y < FIELD_HEIGHT; y++)
 			{
 				if (nextBuffer[y][x] == activeBuffer[y][x]) continue;
 				activeBuffer[y][x] = nextBuffer[y][x];
@@ -93,15 +113,15 @@ public:
 	}
 	void clear()
 	{
-		for (size_t y = 0; y < SCREEN_HEIGHT; y++) 
+		for (size_t y = 0; y < FIELD_HEIGHT; y++) 
 		{
-			for (size_t x = 0; x < SCREEN_WIDTH; x++) 
+			for (size_t x = 0; x < FIELD_WIDTH; x++) 
 			{
 				nextBuffer[y][x] = EMPTY_CELL;
 			}
 		}
 	}
-	void drawRect(int x, int y, int width, int height, symbol border);
+	void drawRect(int x, int y, int width, int height, symbol borde);
 };
 
 class Figure
@@ -122,9 +142,9 @@ public:
 	{
 		screen.putMatrix(shape, position, SQUARE);
 	}
-	void rotate(Direction dir, vector<vector<bool>>& screen)
+	void rotate(Direction dir, vector<vector<bool>> heap)
 	{
-		if (canRotate(dir, screen)) 
+		if (canRotate(dir, heap))
 		{
 			if (dir == Direction::LEFT) 
 			{
@@ -136,11 +156,12 @@ public:
 			}
 		}
 	}
-	void move(Direction dir, vector<vector<bool>>& screen)
+	void move(Direction dir, vector<vector<bool>> heap)
 	{
-		if (canMove(dir, screen))
+		if (canMove(dir, heap))
 		{
-			switch (dir) {
+			switch (dir)
+			{
 			case Direction::DOWN:
 				position.y++;
 				break;
@@ -154,25 +175,29 @@ public:
 		}
 	}
 
-	bool canMove(Direction dir, vector<vector<bool>>& screen);
-	bool canRotate(Direction dir, vector<vector<bool>>& screen);
+	bool canMove(Direction dir, vector<vector<bool>> heap);
+	bool canRotate(Direction dir, vector<vector<bool>> heap);
 };
 
 class Heap
 {
 private:
 	vector<vector<bool>> blocks;
+	vector<vector<bool>> placedFigures;
 	Screen& screen;
 public:
 	Heap(Screen& scr) : screen(scr)
 	{
-		blocks.resize(SCREEN_HEIGHT, vector<bool>(SCREEN_WIDTH / 2, false));
+		blocks.resize(screen.logicalHeight(), vector<bool>(screen.logicalWidth(), false));
+		placedFigures.resize(screen.logicalHeight(), vector<bool>(screen.logicalWidth(), false));
 	}
 
-	void placeFigure(Figure& figure, vector<vector<bool>>& placedFigures);
-	bool checkCollision(vector<vector<bool>>& screen, vector<vector<bool>>& shape, Point position);
-	void checkLines(vector<vector<bool>>& placedFigures);
-	void displayFigure(vector<vector<bool>>& placedFigures);
+	void placeFigure(Figure& figure);
+	bool checkCollision(vector<vector<bool>> shape, Point position);
+	void checkLines();
+	void draw();
+
+	vector<vector<bool>> getPlacedFigures() const { return placedFigures; }
 };
  
 class Game
@@ -182,29 +207,21 @@ private:
 	Figure currentFigure;
 	Point position;
 	Heap heap;
-	vector<vector<bool>> placedFigures;
+	Clock gameClock;
 	bool isGameOver;
 	bool isFastFall;
-	void drawSymb(char c, size_t x, size_t y)
-	{
-		static const HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-		COORD coord = { (SHORT)x, (SHORT)y };
-		SetConsoleCursorPosition(hOut, coord);
-		cout << c;
-	}
 public:
 	Game() : screen(),
 		currentFigure({ {1, 1, 1, 1} }, { 0, 0 }),
 		heap(screen),
 		position({0,0}),
 		isGameOver(false),
-		isFastFall(false),
-		placedFigures(SCREEN_HEIGHT, vector<bool>(SCREEN_WIDTH / 2, false)) {}
+		isFastFall(false) {}
 	void spawnFigure();
 	void draw(Screen& screen);
 
-	void moveFigure(Direction dir) { currentFigure.move(dir, placedFigures); }
-	void rotateFigure(Direction dir) { currentFigure.rotate(dir, placedFigures); }
+	void moveFigure(Direction dir) { currentFigure.move(dir, heap.getPlacedFigures()); }
+	void rotateFigure(Direction dir) { currentFigure.rotate(dir, heap.getPlacedFigures()); }
 	void drawBorders();
 
 	void run();

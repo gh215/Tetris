@@ -11,21 +11,25 @@ void Screen::showConsoleCursor(bool showFlag)
 
 void Screen::drawRect(int x, int y, int width, int height, symbol border)
 {
-    if (x < 0 || y < 0 || x + width > SCREEN_WIDTH / 2 || y + height > SCREEN_HEIGHT)
+    if (x < 0 || y < 0 || x + width > logicalWidth() || y + height > logicalHeight())
     {
         return;
     }
 
-    for (int i = 0; i < width; ++i)
+    for (int row = y; row < y + height; ++row)
     {
-        putSymb(border, { x + i, y });
-        putSymb(border, { x + i, y + height - 1 });
-    }
-
-    for (int j = 1; j < height - 1; ++j)
-    {
-        putSymb(border, { x, y + j });
-        putSymb(border, { x + width - 1, y + j });
+        if (row == y || row == y + height - 1)
+        {
+            for (int col = x; col < x + width; ++col)
+            {
+                drawSymb(border.first, logicalToPhysicalX(col), row);
+            }
+        }
+        else
+        {
+            drawSymb(border.second, logicalToPhysicalX(x), row);
+            drawSymb(border.second, logicalToPhysicalX(x + width - 1), row);
+        }
     }
 }
 
