@@ -141,6 +141,7 @@
   <ItemGroup>
     <ClCompile Include="Figure.cpp" />
     <ClCompile Include="Game.cpp" />
+    <ClCompile Include="Heap.cpp" />
     <ClCompile Include="Screen.cpp" />
     <ClCompile Include="Tetris.cpp" />
   </ItemGroup>

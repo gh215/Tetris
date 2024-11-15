@@ -1,50 +1,106 @@
-#include "Tetris.h"
+﻿#include "Tetris.h"
 
 void Screen::showConsoleCursor(bool showFlag)
 {
-	HANDLE out = GetStdHandle(STD_OUTPUT_HANDLE);
-	CONSOLE_CURSOR_INFO cursorInfo;
-	GetConsoleCursorInfo(out, &cursorInfo);
-	cursorInfo.bVisible = showFlag;
-	SetConsoleCursorInfo(out, &cursorInfo);
+    HANDLE out = GetStdHandle(STD_OUTPUT_HANDLE);
+    CONSOLE_CURSOR_INFO cursorInfo;
+    GetConsoleCursorInfo(out, &cursorInfo);
+    cursorInfo.bVisible = showFlag;
+    SetConsoleCursorInfo(out, &cursorInfo);
 }
 
-void Screen::drawBorders()
+void Screen::drawRect(int x, int y, int width, int height, symbol border)
 {
-	for (int y = 0; y < SCREEN_HEIGHT; ++y)
-	{
-		if (y == 0 || y == SCREEN_HEIGHT - 1)
-		{
-			for (int x = 0; x < SCREEN_WIDTH; ++x)
-			{
-				drawSymb('-', x, y);
-			}
-		}
-		else
-		{
-			drawSymb('|', 0, y);
-			drawSymb('|', SCREEN_WIDTH - 1, y);
-		}
-	}
+    if (x < 0 || y < 0 || x + width > FIELD_WIDTH || y + height > FIELD_HEIGHT)
+    {
+        return;
+    }
+
+    for (int row = y; row < y + height; ++row)
+    {
+        if (row == y || row == y + height - 1)
+        {
+            for (int col = x; col < x + width; ++col)
+            {
+                drawSymb(border.first, logicalToPhysicalX(col), row);
+            }
+        }
+        else
+        {
+            drawSymb(border.second, logicalToPhysicalX(x), row);
+            drawSymb(border.second, logicalToPhysicalX(x + width - 1), row);
+        }
+    }
 }
 
-void Game::spawnFigure()
+void Screen::clearPauseMessage()
 {
-	vector<vector<vector<bool>>> shapes =
-	{
-		{{0,0,0,0,0},
-		 {0,0,0,0,0},
-		 {0,1,1,1,1},
-		 {0,0,0,0,0},
-		 {0,0,0,0,0}},
-		{{0,0,0,0,0},
-		 {0,0,0,0,0},
-		 {0,1,1,1,0},
-		 {0,0,1,0,0},
-		 {0,0,0,0,0}},
-	};
+    const int messageWidth = 14;
+    const int messageHeight = 5;
+    int centerX = FIELD_WIDTH / 2;
+    int centerY = FIELD_HEIGHT / 2;
+    int startX = centerX - messageWidth / 2;
+    int startY = centerY - messageHeight / 2;
 
-	int randomIndex = rand() % shapes.size();
-	currentFigure = Figure(shapes[randomIndex], { SCREEN_WIDTH / 4 - 2, 0 });
+    for (int y = startY; y < startY + messageHeight; y++)
+    {
+        for (int x = startX; x < startX + messageWidth; x++)
+        {
+            drawSymb(' ', x, y);
+        }
+    }
 }
 
+void Screen::boardMessage(string message)
+{
+    const int messageWidth = 14;
+    const int messageHeight = 5;
+
+    int centerX = FIELD_WIDTH / 2;
+    int centerY = FIELD_HEIGHT / 2;
+
+    int startX = centerX - messageWidth / 2;
+    int startY = centerY - messageHeight / 2;
+
+    for (int y = startY; y < startY + messageHeight; y++)
+    {
+        for (int x = startX; x < startX + messageWidth; x++)
+        {
+            drawSymb(' ', x, y);
+        }
+    }
+
+    for (int y = startY; y < startY + messageHeight; y++)
+    {
+        for (int x = startX; x < startX + messageWidth; x++)
+        {
+            if (y == startY || y == startY + messageHeight - 1)
+            {
+                drawSymb('-', x, y);
+            }
+            else if (x == startX || x == startX + messageWidth - 1)
+            {
+                drawSymb('|', x, y);
+            }
+        }
+    }
+
+    int messageX = startX + (messageWidth - message.length()) / 2;
+    int messageY = startY + messageHeight / 2;
+    for (size_t i = 0; i < message.size(); i++)
+    {
+        drawSymb(message[i], messageX + static_cast<int>(i), messageY);
+    }
+}
+
+void Screen::showPauseMessage()
+{
+    string message = "PAUSE";
+    boardMessage(message);
+}
+
+void Screen::showGameOverMessage()
+{
+    string message = "GAME OVER";
+    boardMessage(message);
+}
