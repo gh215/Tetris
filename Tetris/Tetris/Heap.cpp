@@ -14,7 +14,7 @@ void Heap::placeFigure(Figure& figure)
 				int x = pos.x + col;
 				int y = pos.y + row;
 				// Проверяем границы перед размещением
-				if (y >= 0 && y < screen.logicalHeight() - 1 && x >= 0 && x < (screen.logicalWidth() - 1))
+				if (y >= 0 && y < logicalHeight() - 1 && x >= 0 && x < (logicalWidth() - 1))
 				{
 					placedFigures[y][x] = true;
 				}
@@ -38,8 +38,8 @@ bool Heap::checkCollision(vector<vector<bool>> shape, Point position)
 
 				// Проверяем выход за границы
 				if (newX < 0 
-					|| newX >= screen.logicalWidth() 
-					|| newY >= screen.logicalHeight()
+					|| newX >= logicalWidth() 
+					|| newY >= logicalHeight()
 					|| (newY >= 0 && placedFigures[newY][newX]))
 				{
 					return true;
@@ -54,11 +54,11 @@ bool Heap::checkCollision(vector<vector<bool>> shape, Point position)
 void Heap::checkLines()
 {
 	// Проверяем каждую строку снизу вверх
-	for (int row = screen.logicalHeight() - 1; row >= 0; row--)
+	for (int row = logicalHeight() - 1; row >= 0; )
 	{
 		bool isLineFull = true;
 		// Проверяем заполненность строки
-		for (int col = 1; col < screen.logicalWidth() - 1; col++)
+		for (int col = 1; col < logicalWidth() - 1; col++)
 		{
 			if (!placedFigures[row][col])
 			{
@@ -72,20 +72,20 @@ void Heap::checkLines()
 			// Сдвигаем все строки выше текущей вниз
 			for (int y = row; y > 0; y--)
 			{
-				for (int x = 0; x < screen.logicalWidth(); x++)
+				for (int x = 0; x < logicalWidth(); x++)
 				{
 					placedFigures[y][x] = placedFigures[y - 1][x];
 				}
 			}
 			// Очищаем верхнюю строку
-			for (int x = 1; x < screen.logicalWidth() - 1; x++)
+			for (int x = 1; x < logicalWidth() - 1; x++)
 			{
 				placedFigures[0][x] = false;
 			}
 		}
 		else
 		{
-			// Переходим к следующей строке только если текущая не была удалена
+			// Переходим к следующей строке
 			row--;
 		}
 	}
@@ -94,13 +94,13 @@ void Heap::checkLines()
 // Отрисовка всех блоков
 void Heap::draw()
 {
-	for (int y = 0; y < screen.logicalHeight(); y++)
+	for (int y = 0; y < logicalHeight(); y++)
 	{
-		for (int x = 0; x < screen.logicalWidth(); x++)
+		for (int x = 0; x < logicalWidth(); x++)
 		{
 			if (placedFigures[y][x])
 			{
-				screen.putSymb(SQUARE, { x, y });
+				screen.putSymb(SQUARE, screen.logicalToPhysicalX(x), y);
 			}
 		}
 	}

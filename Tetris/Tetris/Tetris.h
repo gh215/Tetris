@@ -23,6 +23,8 @@ const int RIGHT = 77;
 const int DOWN = 80;
 const int CLOCK = 'e';
 const int COUNTER_CLOCK = 'q';
+const int PAUSE_LOWER = 112;
+const int PAUSE_UPPER = 80;
 
 struct Point
 {
@@ -41,6 +43,9 @@ class Figure;
 class Game;
 class Heap;
 
+inline int logicalWidth() { return FIELD_WIDTH / 2; };
+inline int logicalHeight() { return FIELD_HEIGHT; };
+
 class Clock 
 {
 private:
@@ -50,6 +55,8 @@ public:
 	void tick() { ticks++; }
 	long getTicks() { return ticks; }
 };
+
+extern Clock globalClock;
 
 class Screen
 {
@@ -71,20 +78,16 @@ public:
 		clear();
 		showConsoleCursor(false); 
 	}
-	int logicalWidth() const { return FIELD_WIDTH / 2; }
-	int logicalHeight() const { return FIELD_HEIGHT; }
 
 	int logicalToPhysicalX(int x) const { return x * 2; }
-	int logicalToPhysicalY(int y) const { return y; }
-	bool putSymb(symbol symb, Point p)
+	bool putSymb(symbol symb, int physicalX, int physicalY)
 	{
-		if (p.y < 0 || p.y > logicalHeight() - 1) return false;
-		if (p.x < 0 || p.x >= logicalWidth() - 1) return false;
+		if (physicalY < 0 || physicalY >= FIELD_HEIGHT) return false;
+		if (physicalX < 0 || physicalX >= FIELD_WIDTH - 1) return false;
 		if (!isprint(symb.first) || !isprint(symb.second)) return false;
 
-		int physicalX = logicalToPhysicalX(p.x);
-		nextBuffer[p.y][physicalX] = symb.first;
-		nextBuffer[p.y][physicalX + 1] = symb.second;
+		nextBuffer[physicalY][physicalX] = symb.first;
+		nextBuffer[physicalY][physicalX + 1] = symb.second;
 		return true;
 	}
 	void putMatrix(vector<vector<bool>> m, Point p, const symbol symb)
@@ -93,7 +96,7 @@ public:
 		{
 			for (int col = 0; col < m[row].size(); col++)
 			{
-				if (m[row][col]) putSymb(symb, { p.x + col, p.y + row });
+				if (m[row][col]) putSymb(symb, logicalToPhysicalX(p.x + col), p.y + row);
 			}
 		}
 	}
@@ -122,6 +125,10 @@ public:
 		}
 	}
 	void drawRect(int x, int y, int width, int height, symbol borde);
+	void clearPauseMessage();
+	void boardMessage(string message);
+	void showPauseMessage();
+	void showGameOverMessage();
 };
 
 class Figure
@@ -188,8 +195,8 @@ private:
 public:
 	Heap(Screen& scr) : screen(scr)
 	{
-		blocks.resize(screen.logicalHeight(), vector<bool>(screen.logicalWidth(), false));
-		placedFigures.resize(screen.logicalHeight(), vector<bool>(screen.logicalWidth(), false));
+		blocks.resize(logicalHeight(), vector<bool>(logicalWidth(), false));
+		placedFigures.resize(logicalHeight(), vector<bool>(logicalWidth(), false));
 	}
 
 	void placeFigure(Figure& figure);
@@ -229,6 +236,13 @@ public:
 	void update();
 
 	void dropFigure();
+
+	void checkPause();
+	void clearPauseMessage();
+	void boardMessage(string message);
+	void showPauseMessage();
 };
+
+
 
 

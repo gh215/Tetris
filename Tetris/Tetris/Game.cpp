@@ -1,4 +1,7 @@
 ﻿#include "Tetris.h"
+
+Clock globalClock;
+
 void Game::update()
 {
     drawBorders();
@@ -14,6 +17,7 @@ void Game::update()
         if (heap.checkCollision(currentFigure.getShape(), currentFigure.getPosition()))
         {
             isGameOver = true;
+            screen.showGameOverMessage();
         }
     }
 }
@@ -49,7 +53,6 @@ void Game::dropFigure()
 
 void Game::processInput()
 {
-    Clock horizontalMoveClock;
     if (_kbhit())
     {
         int key = _getch();
@@ -58,13 +61,23 @@ void Game::processInput()
             key = _getch();
             if (key == LEFT && currentFigure.canMove(Direction::LEFT, heap.getPlacedFigures()))
             {
-                currentFigure.move(Direction::LEFT, heap.getPlacedFigures());
+                if (globalClock.getTicks() % 20 == 0)
+                {
+                    currentFigure.move(Direction::LEFT, heap.getPlacedFigures());
+                }
+                
             }
             else if (key == RIGHT && currentFigure.canMove(Direction::RIGHT, heap.getPlacedFigures()))
             {
-                currentFigure.move(Direction::RIGHT, heap.getPlacedFigures());
-
+                if (globalClock.getTicks() % 20 == 0)
+                {
+                    currentFigure.move(Direction::RIGHT, heap.getPlacedFigures());
+                }
             }
+        }
+        else if (key == PAUSE_LOWER || key == PAUSE_UPPER)
+        {
+            checkPause();
         }
         else if (key == SPACE)
         {
@@ -84,7 +97,16 @@ void Game::processInput()
 
 void Game::drawBorders()
 {
-    screen.drawRect(0, 0, screen.logicalWidth(), screen.logicalHeight(), { '-', '|' });
+    screen.drawRect(0, 0, logicalWidth(), logicalHeight(), { '-', '|' });;
+}
+
+void Game::checkPause()
+{
+    screen.showPauseMessage();
+    _getch();
+    screen.clearPauseMessage();
+    drawBorders();
+    draw(screen);
 }
 
 void Game::spawnFigure()
@@ -127,5 +149,5 @@ void Game::spawnFigure()
     };
 
     int randomIndex = rand() % shapes.size();
-    currentFigure = Figure(shapes[randomIndex], { screen.logicalWidth() / 2 - 2 - 2, 0 });
+    currentFigure = Figure(shapes[randomIndex], { logicalWidth() / 2 - 2 - 2, 0 });
 }

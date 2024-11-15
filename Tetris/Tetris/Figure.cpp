@@ -32,7 +32,7 @@ bool Figure::checkPosition(const vector<vector<bool>>& shape, Point pos, const v
 				int newX = pos.x + col;
 				int newY = pos.y + row;
 
-				if (newX < 1 || newX >= FIELD_WIDTH / 2 - 1 || newY >= FIELD_HEIGHT - 1 || (newY >= 0 && screen[newY][newX]))
+				if (newX < 1 || newX >= logicalWidth() - 1 || newY >= logicalHeight() - 1 || (newY >= 0 && screen[newY][newX]))
 				{
 					return false;
 				}
