@@ -21,6 +21,8 @@ void Heap::placeFigure(Figure& figure)
 			}
 		}
 	}
+
+	game->figurePlaced();
 }
 
 bool Heap::checkCollision(vector<vector<bool>> shape, Point position)
@@ -50,14 +52,11 @@ bool Heap::checkCollision(vector<vector<bool>> shape, Point position)
 	return false; 
 }
 
-// Проверка и удаление заполненных линий
 void Heap::checkLines()
 {
-	// Проверяем каждую строку снизу вверх
 	for (int row = logicalHeight() - 1; row >= 0; )
 	{
 		bool isLineFull = true;
-		// Проверяем заполненность строки
 		for (int col = 1; col < logicalWidth() - 1; col++)
 		{
 			if (!placedFigures[row][col])
@@ -66,10 +65,10 @@ void Heap::checkLines()
 				break;
 			}
 		}
-		// Если строка заполнена
+
 		if (isLineFull)
 		{
-			// Сдвигаем все строки выше текущей вниз
+			// Удаление строки и сдвиг строк выше вниз
 			for (int y = row; y > 0; y--)
 			{
 				for (int x = 0; x < logicalWidth(); x++)
@@ -77,15 +76,16 @@ void Heap::checkLines()
 					placedFigures[y][x] = placedFigures[y - 1][x];
 				}
 			}
-			// Очищаем верхнюю строку
 			for (int x = 1; x < logicalWidth() - 1; x++)
 			{
 				placedFigures[0][x] = false;
 			}
+
+			// Увеличиваем счётчик удалённых строк
+			game->totalLinesCleared();
 		}
 		else
 		{
-			// Переходим к следующей строке
 			row--;
 		}
 	}

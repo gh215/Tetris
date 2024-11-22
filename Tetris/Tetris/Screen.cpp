@@ -56,7 +56,7 @@ void Screen::boardMessage(string message)
     const int messageWidth = 14;
     const int messageHeight = 5;
 
-    int centerX = FIELD_WIDTH / 2;
+    int centerX = GAME_FIELD_WIDTH / 2;
     int centerY = FIELD_HEIGHT / 2;
 
     int startX = centerX - messageWidth / 2;
@@ -103,4 +103,10 @@ void Screen::showGameOverMessage()
 {
     string message = "GAME OVER";
     boardMessage(message);
+}
+
+void Screen::moveCursorToBottom()
+{
+    COORD endPosition = { 0, (SHORT)(FIELD_HEIGHT / 3) };
+    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), endPosition);
 }

@@ -11,7 +11,9 @@
 using namespace std;
 
 const int FIELD_HEIGHT = 30;
-const int FIELD_WIDTH = 44;
+const int FIELD_WIDTH = 70;  
+const int GAME_FIELD_WIDTH = 44; 
+const int INFO_START_X = 46;  
 const int SLEEP = 200;
 const int HORIZONTAL_MOVE_SLEEP = 50;
 
@@ -43,7 +45,7 @@ class Figure;
 class Game;
 class Heap;
 
-inline int logicalWidth() { return FIELD_WIDTH / 2; };
+inline int logicalWidth() { return GAME_FIELD_WIDTH / 2; };
 inline int logicalHeight() { return FIELD_HEIGHT; };
 
 class Clock 
@@ -124,7 +126,19 @@ public:
 			}
 		}
 	}
-	void drawRect(int x, int y, int width, int height, symbol borde);
+	void putText(const string& text, int x, int y)
+	{
+		int px = logicalToPhysicalX(x);
+		if (y < 0 || y >= FIELD_HEIGHT || px < 0 || px + text.length() >= FIELD_WIDTH) return;
+
+		for (size_t i = 0; i < text.size(); i++)
+		{
+			if (px + i >= FIELD_WIDTH) break;  // Предотвращаем выход за пределы буфера
+			nextBuffer[y][px + i] = text[i];
+		}
+	}
+	void moveCursorToBottom();
+	void drawRect(int x, int y, int width, int height, symbol border);
 	void clearPauseMessage();
 	void boardMessage(string message);
 	void showPauseMessage();
@@ -192,8 +206,9 @@ private:
 	vector<vector<bool>> blocks;
 	vector<vector<bool>> placedFigures;
 	Screen& screen;
+	Game* game;
 public:
-	Heap(Screen& scr) : screen(scr)
+	Heap(Screen& scr, Game* g) : screen(scr), game(g)
 	{
 		blocks.resize(logicalHeight(), vector<bool>(logicalWidth(), false));
 		placedFigures.resize(logicalHeight(), vector<bool>(logicalWidth(), false));
@@ -212,19 +227,27 @@ class Game
 private:
 	Screen screen;
 	Figure currentFigure;
+	Figure nextFigure;
 	Point position;
 	Heap heap;
 	Clock gameClock;
 	bool isGameOver;
 	bool isFastFall;
+	int linesCleared;
+	int score;
 public:
 	Game() : screen(),
-		currentFigure({ {1, 1, 1, 1} }, { 0, 0 }),
-		heap(screen),
+		currentFigure(vector<vector<bool>>(), { 0, 0 }),  // Пустая фигура
+		nextFigure(vector<vector<bool>>(), { 0, 0 }),     // Пустая фигура
+		heap(screen, this),
 		position({0,0}),
 		isGameOver(false),
-		isFastFall(false) {}
+		isFastFall(false),
+		linesCleared(0),
+		score(0) {}
+
 	void spawnFigure();
+	void displayNextFigure();
 	void draw(Screen& screen);
 
 	void moveFigure(Direction dir) { currentFigure.move(dir, heap.getPlacedFigures()); }
@@ -241,6 +264,20 @@ public:
 	void clearPauseMessage();
 	void boardMessage(string message);
 	void showPauseMessage();
+
+	void drawInfoBoxes();
+	void totalLinesCleared() 
+	{ 
+		linesCleared++; 
+		addScore(100);
+	}
+
+	void waitForInput() { int ignore = _getch(); }
+
+	void figurePlaced() { addScore(10); }
+
+	void addScore(int points) { score += points; }
+	int getScore() const { return score; }
 };
 
 

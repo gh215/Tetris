@@ -2,6 +2,7 @@
 
 Clock globalClock;
 
+
 void Game::update()
 {
     drawBorders();
@@ -18,6 +19,8 @@ void Game::update()
         {
             isGameOver = true;
             screen.showGameOverMessage();
+            screen.moveCursorToBottom();
+            waitForInput();
         }
     }
 }
@@ -37,6 +40,7 @@ void Game::draw(Screen& screen)
 {
     heap.draw();
     currentFigure.draw(screen);
+    drawInfoBoxes();
     screen.draw();
 }
 
@@ -103,7 +107,7 @@ void Game::drawBorders()
 void Game::checkPause()
 {
     screen.showPauseMessage();
-    _getch();
+    int ignore = _getch();
     screen.clearPauseMessage();
     drawBorders();
     draw(screen);
@@ -148,6 +152,43 @@ void Game::spawnFigure()
          {0,0,0,0,0}}
     };
 
+    if (currentFigure.getShape().empty())
+    {
+        int randomIndex = rand() % shapes.size();
+        currentFigure = Figure(shapes[randomIndex], { (GAME_FIELD_WIDTH / 4) - 2, 0 });
+    }
+    else
+    {
+        currentFigure = nextFigure;
+    }
+
     int randomIndex = rand() % shapes.size();
-    currentFigure = Figure(shapes[randomIndex], { logicalWidth() / 2 - 2 - 2, 0 });
+    nextFigure = Figure(shapes[randomIndex], { (GAME_FIELD_WIDTH / 4) - 2, 0 });
+}
+
+void Game::displayNextFigure()
+{
+    vector<vector<bool>> shape = nextFigure.getShape();
+    Point pos;
+    pos.x = GAME_FIELD_WIDTH / 2 + 5; 
+    pos.y = 8;
+    screen.putMatrix(shape, pos, SQUARE);
+}
+
+void Game::drawInfoBoxes()
+{
+    // Окно для строк (Lines)
+    screen.drawRect(GAME_FIELD_WIDTH / 2 + 1, 1, 10, 5, { '-', '|' });
+    string linesText = "LINES: " + to_string(linesCleared);
+    screen.putText(linesText, GAME_FIELD_WIDTH / 2 + 2, 3);
+
+    // Окно для следующей фигуры (Next Figure)
+    screen.drawRect(GAME_FIELD_WIDTH / 2 + 1, 8, 10, 5, { '-', '|' });
+    screen.putText("NEXT:", GAME_FIELD_WIDTH / 2 + 2, 10);
+    displayNextFigure();
+
+    // Окно для очков (Score)
+    screen.drawRect(GAME_FIELD_WIDTH / 2 + 1, 15, 10, 5, { '-', '|' });
+    string scoreText = "SCORE: " + to_string(score);
+    screen.putText(scoreText, GAME_FIELD_WIDTH / 2 + 2, 17);
 }
