@@ -1,4 +1,4 @@
-#include "Tetris.h"
+п»ї#include "Tetris.h"
 
 void Heap::placeFigure(Figure& figure)
 {
@@ -13,7 +13,7 @@ void Heap::placeFigure(Figure& figure)
 			{
 				int x = pos.x + col;
 				int y = pos.y + row;
-				// Проверяем границы перед размещением
+				// РџСЂРѕРІРµСЂСЏРµРј РіСЂР°РЅРёС†С‹ РїРµСЂРµРґ СЂР°Р·РјРµС‰РµРЅРёРµРј
 				if (y >= 0 && y < logicalHeight() - 1 && x >= 0 && x < (logicalWidth() - 1))
 				{
 					placedFigures[y][x] = true;
@@ -26,18 +26,18 @@ void Heap::placeFigure(Figure& figure)
 
 bool Heap::checkCollision(vector<vector<bool>> shape, Point position)
 {
-	// Проверяем каждую ячейку фигуры
+	// РџСЂРѕРІРµСЂСЏРµРј РєР°Р¶РґСѓСЋ СЏС‡РµР№РєСѓ С„РёРіСѓСЂС‹
 	for (int row = 0; row < shape.size(); row++)
 	{
 		for (int col = 0; col < shape[row].size(); col++)
 		{
-			// Если в данной позиции есть часть фигуры
+			// Р•СЃР»Рё РІ РґР°РЅРЅРѕР№ РїРѕР·РёС†РёРё РµСЃС‚СЊ С‡Р°СЃС‚СЊ С„РёРіСѓСЂС‹
 			if (shape[row][col])
 			{
 				int newX = position.x + col;
 				int newY = position.y + row;
 
-				// Проверяем выход за границы
+				// РџСЂРѕРІРµСЂСЏРµРј РІС‹С…РѕРґ Р·Р° РіСЂР°РЅРёС†С‹
 				if (newX < 0
 					|| newX >= logicalWidth()
 					|| newY >= logicalHeight()
@@ -54,8 +54,8 @@ bool Heap::checkCollision(vector<vector<bool>> shape, Point position)
 void Heap::checkLines()
 {
     vector<int> fullLines;
-	// Сначала определяем полные строки
-    for (int row = logicalHeight() - 1; row >= 0; ) // Проверяем все столбцы
+	// РЎРЅР°С‡Р°Р»Р° РѕРїСЂРµРґРµР»СЏРµРј РїРѕР»РЅС‹Рµ СЃС‚СЂРѕРєРё
+    for (int row = logicalHeight() - 1; row >= 0; ) // РџСЂРѕРІРµСЂСЏРµРј РІСЃРµ СЃС‚РѕР»Р±С†С‹
     {
         bool isLineFull = true;
         for (int col = 1; col < logicalWidth() - 1; col++)
@@ -81,7 +81,7 @@ void Heap::checkLines()
     {
         for (const int& row : fullLines)
         {
-            for (int col = 1; col < logicalWidth() - 1; col++) // Обновляем все столбцы
+            for (int col = 1; col < logicalWidth() - 1; col++) // РћР±РЅРѕРІР»СЏРµРј РІСЃРµ СЃС‚РѕР»Р±С†С‹
             {
                 placedFigures[row][col] = (blink % 2 == 0);
             }
@@ -91,7 +91,7 @@ void Heap::checkLines()
         Sleep(FLASH_SLEEP);
     }
 
-	// Удаление заполненных линий и сдвиг фигур вниз
+	// РЈРґР°Р»РµРЅРёРµ Р·Р°РїРѕР»РЅРµРЅРЅС‹С… Р»РёРЅРёР№ Рё СЃРґРІРёРі С„РёРіСѓСЂ РІРЅРёР·
     for (const int& row : fullLines)
     {
         for (int y = row; y > 0; y--)
