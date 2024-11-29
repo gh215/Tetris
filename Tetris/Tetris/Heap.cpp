@@ -21,7 +21,6 @@ void Heap::placeFigure(Figure& figure)
 			}
 		}
 	}
-
 	game->figurePlaced();
 }
 
@@ -39,8 +38,8 @@ bool Heap::checkCollision(vector<vector<bool>> shape, Point position)
 				int newY = position.y + row;
 
 				// Проверяем выход за границы
-				if (newX < 0 
-					|| newX >= logicalWidth() 
+				if (newX < 0
+					|| newX >= logicalWidth()
 					|| newY >= logicalHeight()
 					|| (newY >= 0 && placedFigures[newY][newX]))
 				{
@@ -49,49 +48,69 @@ bool Heap::checkCollision(vector<vector<bool>> shape, Point position)
 			}
 		}
 	}
-	return false; 
+	return false;
 }
 
 void Heap::checkLines()
 {
-	for (int row = logicalHeight() - 1; row >= 0; )
-	{
-		bool isLineFull = true;
-		for (int col = 1; col < logicalWidth() - 1; col++)
-		{
-			if (!placedFigures[row][col])
-			{
-				isLineFull = false;
-				break;
-			}
-		}
+    vector<int> fullLines;
+	// Сначала определяем полные строки
+    for (int row = logicalHeight() - 1; row >= 0; ) // Проверяем все столбцы
+    {
+        bool isLineFull = true;
+        for (int col = 1; col < logicalWidth() - 1; col++)
+        {
+            if (!placedFigures[row][col])
+            {
+                isLineFull = false;
+                break;
+            }
+        }
 
-		if (isLineFull)
-		{
-			// Удаление строки и сдвиг строк выше вниз
-			for (int y = row; y > 0; y--)
-			{
-				for (int x = 0; x < logicalWidth(); x++)
-				{
-					placedFigures[y][x] = placedFigures[y - 1][x];
-				}
-			}
-			for (int x = 1; x < logicalWidth() - 1; x++)
-			{
-				placedFigures[0][x] = false;
-			}
+        if (isLineFull)
+        {
+            fullLines.push_back(row);
+        }
 
-			// Увеличиваем счётчик удалённых строк
-			game->totalLinesCleared();
-		}
-		else
-		{
-			row--;
-		}
-	}
+        row--;
+    }
+
+    if (fullLines.empty()) return;
+
+    for (int blink = 0; blink < 4; blink++) 
+    {
+        for (const int& row : fullLines)
+        {
+            for (int col = 1; col < logicalWidth() - 1; col++) // Обновляем все столбцы
+            {
+                placedFigures[row][col] = (blink % 2 == 0);
+            }
+        }
+
+        game->draw(screen);
+        Sleep(FLASH_SLEEP);
+    }
+
+	// Удаление заполненных линий и сдвиг фигур вниз
+    for (const int& row : fullLines)
+    {
+        for (int y = row; y > 0; y--)
+        {
+            for (int x = 0; x < logicalWidth(); x++)
+            {
+                placedFigures[y][x] = placedFigures[y - 1][x];
+            }
+        }
+
+        for (int x = 1; x < logicalWidth() - 1; x++)
+        {
+            placedFigures[0][x] = false;
+        }
+
+        game->totalLinesCleared();
+    }
 }
 
-// Отрисовка всех блоков
 void Heap::draw()
 {
 	for (int y = 0; y < logicalHeight(); y++)
