@@ -21,7 +21,7 @@ vector<vector<bool>> Figure::rotate(bool clockwise)
 	return rotated;
 }
 
-bool Figure::checkPosition(const vector<vector<bool>>& shape, Point pos, const vector<vector<bool>>& screen)
+bool Figure::checkPosition(const vector<vector<bool>>& shape, Point pos, const vector<vector<bool>>& heap)
 {
 	for (int row = 0; row < shape.size(); row++)
 	{
@@ -32,7 +32,7 @@ bool Figure::checkPosition(const vector<vector<bool>>& shape, Point pos, const v
 				int newX = pos.x + col;
 				int newY = pos.y + row;
 
-				if (newX < 1 || newX >= logicalWidth() - 1 || newY >= logicalHeight() - 1 || (newY >= 0 && screen[newY][newX]))
+				if (newX < 1 || newX >= logicalWidth() - 1 || newY >= logicalHeight() - 1 || (newY >= 0 && heap[newY][newX]))
 				{
 					return false;
 				}

@@ -1,4 +1,4 @@
-#include "Tetris.h"
+п»ї#include "Tetris.h"
 
 void Heap::placeFigure(Figure& figure)
 {
@@ -13,7 +13,7 @@ void Heap::placeFigure(Figure& figure)
 			{
 				int x = pos.x + col;
 				int y = pos.y + row;
-				// Проверяем границы перед размещением
+				// РџСЂРѕРІРµСЂСЏРµРј РіСЂР°РЅРёС†С‹ РїРµСЂРµРґ СЂР°Р·РјРµС‰РµРЅРёРµРј
 				if (y >= 0 && y < logicalHeight() - 1 && x >= 0 && x < (logicalWidth() - 1))
 				{
 					placedFigures[y][x] = true;
@@ -21,24 +21,25 @@ void Heap::placeFigure(Figure& figure)
 			}
 		}
 	}
+	game->figurePlaced();
 }
 
 bool Heap::checkCollision(vector<vector<bool>> shape, Point position)
 {
-	// Проверяем каждую ячейку фигуры
+	// РџСЂРѕРІРµСЂСЏРµРј РєР°Р¶РґСѓСЋ СЏС‡РµР№РєСѓ С„РёРіСѓСЂС‹
 	for (int row = 0; row < shape.size(); row++)
 	{
 		for (int col = 0; col < shape[row].size(); col++)
 		{
-			// Если в данной позиции есть часть фигуры
+			// Р•СЃР»Рё РІ РґР°РЅРЅРѕР№ РїРѕР·РёС†РёРё РµСЃС‚СЊ С‡Р°СЃС‚СЊ С„РёРіСѓСЂС‹
 			if (shape[row][col])
 			{
 				int newX = position.x + col;
 				int newY = position.y + row;
 
-				// Проверяем выход за границы
-				if (newX < 0 
-					|| newX >= logicalWidth() 
+				// РџСЂРѕРІРµСЂСЏРµРј РІС‹С…РѕРґ Р·Р° РіСЂР°РЅРёС†С‹
+				if (newX < 0
+					|| newX >= logicalWidth()
 					|| newY >= logicalHeight()
 					|| (newY >= 0 && placedFigures[newY][newX]))
 				{
@@ -47,51 +48,69 @@ bool Heap::checkCollision(vector<vector<bool>> shape, Point position)
 			}
 		}
 	}
-	return false; 
+	return false;
 }
 
-// Проверка и удаление заполненных линий
 void Heap::checkLines()
 {
-	// Проверяем каждую строку снизу вверх
-	for (int row = logicalHeight() - 1; row >= 0; )
-	{
-		bool isLineFull = true;
-		// Проверяем заполненность строки
-		for (int col = 1; col < logicalWidth() - 1; col++)
-		{
-			if (!placedFigures[row][col])
-			{
-				isLineFull = false;
-				break;
-			}
-		}
-		// Если строка заполнена
-		if (isLineFull)
-		{
-			// Сдвигаем все строки выше текущей вниз
-			for (int y = row; y > 0; y--)
-			{
-				for (int x = 0; x < logicalWidth(); x++)
-				{
-					placedFigures[y][x] = placedFigures[y - 1][x];
-				}
-			}
-			// Очищаем верхнюю строку
-			for (int x = 1; x < logicalWidth() - 1; x++)
-			{
-				placedFigures[0][x] = false;
-			}
-		}
-		else
-		{
-			// Переходим к следующей строке
-			row--;
-		}
-	}
+    vector<int> fullLines;
+	// РЎРЅР°С‡Р°Р»Р° РѕРїСЂРµРґРµР»СЏРµРј РїРѕР»РЅС‹Рµ СЃС‚СЂРѕРєРё
+    for (int row = logicalHeight() - 1; row >= 0; ) // РџСЂРѕРІРµСЂСЏРµРј РІСЃРµ СЃС‚РѕР»Р±С†С‹
+    {
+        bool isLineFull = true;
+        for (int col = 1; col < logicalWidth() - 1; col++)
+        {
+            if (!placedFigures[row][col])
+            {
+                isLineFull = false;
+                break;
+            }
+        }
+
+        if (isLineFull)
+        {
+            fullLines.push_back(row);
+        }
+
+        row--;
+    }
+
+    if (fullLines.empty()) return;
+
+    for (int blink = 0; blink < 4; blink++) 
+    {
+        for (const int& row : fullLines)
+        {
+            for (int col = 1; col < logicalWidth() - 1; col++) // РћР±РЅРѕРІР»СЏРµРј РІСЃРµ СЃС‚РѕР»Р±С†С‹
+            {
+                placedFigures[row][col] = (blink % 2 == 0);
+            }
+        }
+
+        game->draw(screen);
+        Sleep(FLASH_SLEEP);
+    }
+
+	// РЈРґР°Р»РµРЅРёРµ Р·Р°РїРѕР»РЅРµРЅРЅС‹С… Р»РёРЅРёР№ Рё СЃРґРІРёРі С„РёРіСѓСЂ РІРЅРёР·
+    for (const int& row : fullLines)
+    {
+        for (int y = row; y > 0; y--)
+        {
+            for (int x = 0; x < logicalWidth(); x++)
+            {
+                placedFigures[y][x] = placedFigures[y - 1][x];
+            }
+        }
+
+        for (int x = 1; x < logicalWidth() - 1; x++)
+        {
+            placedFigures[0][x] = false;
+        }
+
+        game->totalLinesCleared();
+    }
 }
 
-// Отрисовка всех блоков
 void Heap::draw()
 {
 	for (int y = 0; y < logicalHeight(); y++)

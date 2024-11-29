@@ -11,9 +11,12 @@
 using namespace std;
 
 const int FIELD_HEIGHT = 30;
-const int FIELD_WIDTH = 44;
+const int FIELD_WIDTH = 70;
+const int GAME_FIELD_WIDTH = 44;
+const int INFO_START_X = 46;
 const int SLEEP = 200;
 const int HORIZONTAL_MOVE_SLEEP = 50;
+const int FLASH_SLEEP = 150;
 
 const char EMPTY_CELL = ' ';
 const int ARROW = 224;
@@ -21,8 +24,14 @@ const int LEFT = 75;
 const int SPACE = 32;
 const int RIGHT = 77;
 const int DOWN = 80;
-const int CLOCK = 'e';
-const int COUNTER_CLOCK = 'q';
+const int CLOCK_LOWERCASE = 101;
+const int CLOCK_UPPERCASE = 69;
+const int COUNTER_CLOCK_LOWERCASE = 113;
+const int COUNTER_CLOCK_UPPERCASE = 81;
+const int RESTART_LOWERCASE = 114;
+const int RESTART_UPPERCASE = 82;
+const int QUIT_LOWERCASE = 116;
+const int QUIT_UPPERCASE = 84;
 const int PAUSE_LOWER = 112;
 const int PAUSE_UPPER = 80;
 
@@ -43,10 +52,10 @@ class Figure;
 class Game;
 class Heap;
 
-inline int logicalWidth() { return FIELD_WIDTH / 2; };
+inline int logicalWidth() { return GAME_FIELD_WIDTH / 2; };
 inline int logicalHeight() { return FIELD_HEIGHT; };
 
-class Clock 
+class Clock
 {
 private:
 	long ticks;
@@ -73,10 +82,10 @@ private:
 	}
 	void showConsoleCursor(bool showFlag);
 public:
-	Screen() 
-	{ 
+	Screen()
+	{
 		clear();
-		showConsoleCursor(false); 
+		showConsoleCursor(false);
 	}
 
 	int logicalToPhysicalX(int x) const { return x * 2; }
@@ -116,15 +125,27 @@ public:
 	}
 	void clear()
 	{
-		for (size_t y = 0; y < FIELD_HEIGHT; y++) 
+		for (size_t y = 0; y < FIELD_HEIGHT; y++)
 		{
-			for (size_t x = 0; x < FIELD_WIDTH; x++) 
+			for (size_t x = 0; x < FIELD_WIDTH; x++)
 			{
 				nextBuffer[y][x] = EMPTY_CELL;
 			}
 		}
 	}
-	void drawRect(int x, int y, int width, int height, symbol borde);
+	void putText(const string& text, int x, int y)
+	{
+		int px = logicalToPhysicalX(x);
+		if (y < 0 || y >= FIELD_HEIGHT || px < 0 || px + text.length() >= FIELD_WIDTH) return;
+
+		for (size_t i = 0; i < text.size(); i++)
+		{
+			if (px + i >= FIELD_WIDTH) break;  // Предотвращаем выход за пределы буфера
+			nextBuffer[y][px + i] = text[i];
+		}
+	}
+	void moveCursorToBottom();
+	void drawRect(int x, int y, int width, int height, symbol border);
 	void clearPauseMessage();
 	void boardMessage(string message);
 	void showPauseMessage();
@@ -153,11 +174,11 @@ public:
 	{
 		if (canRotate(dir, heap))
 		{
-			if (dir == Direction::LEFT) 
+			if (dir == Direction::LEFT)
 			{
 				shape = rotate(false);
 			}
-			else if (dir == Direction::RIGHT) 
+			else if (dir == Direction::RIGHT)
 			{
 				shape = rotate(true);
 			}
@@ -192,19 +213,24 @@ private:
 	vector<vector<bool>> blocks;
 	vector<vector<bool>> placedFigures;
 	Screen& screen;
+	Game* game;
+	bool isBlinking;
+	int blinkTimer;
 public:
-	Heap(Screen& scr) : screen(scr)
+	Heap(Screen& scr, Game* g) : screen(scr), game(g), isBlinking(false), blinkTimer(0)
 	{
 		blocks.resize(logicalHeight(), vector<bool>(logicalWidth(), false));
 		placedFigures.resize(logicalHeight(), vector<bool>(logicalWidth(), false));
 	}
 
 	void placeFigure(Figure& figure);
+	void playClearAnimation();
 	bool checkCollision(vector<vector<bool>> shape, Point position);
 	void checkLines();
 	void draw();
 
 	vector<vector<bool>> getPlacedFigures() const { return placedFigures; }
+
 };
  
 class Game
@@ -212,19 +238,27 @@ class Game
 private:
 	Screen screen;
 	Figure currentFigure;
+	Figure nextFigure;
 	Point position;
 	Heap heap;
 	Clock gameClock;
 	bool isGameOver;
 	bool isFastFall;
+	int linesCleared;
+	int score;
 public:
 	Game() : screen(),
-		currentFigure({ {1, 1, 1, 1} }, { 0, 0 }),
-		heap(screen),
-		position({0,0}),
+		currentFigure(vector<vector<bool>>(), { 0, 0 }),  // Пустая фигура
+		nextFigure(vector<vector<bool>>(), { 0, 0 }),     // Пустая фигура
+		heap(screen, this),
+		position({ 0,0 }),
 		isGameOver(false),
-		isFastFall(false) {}
+		isFastFall(false),
+		linesCleared(0),
+		score(0) {}
+
 	void spawnFigure();
+	void displayNextFigure();
 	void draw(Screen& screen);
 
 	void moveFigure(Direction dir) { currentFigure.move(dir, heap.getPlacedFigures()); }
@@ -241,6 +275,20 @@ public:
 	void clearPauseMessage();
 	void boardMessage(string message);
 	void showPauseMessage();
+	void drawInfoBoxes();
+	void restart();
+
+	void totalLinesCleared()
+	{
+		linesCleared++;
+		addScore(100);
+	}
+
+	void waitForInput() { int ignore = _getch(); }
+	void figurePlaced() { addScore(10); }
+
+	void addScore(int points) { score += points; }
+	int getScore() const { return score; }
 };
 
 

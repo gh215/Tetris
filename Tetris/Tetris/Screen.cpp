@@ -37,8 +37,10 @@ void Screen::clearPauseMessage()
 {
     const int messageWidth = 14;
     const int messageHeight = 5;
-    int centerX = FIELD_WIDTH / 2;
+
+    int centerX = GAME_FIELD_WIDTH / 2;
     int centerY = FIELD_HEIGHT / 2;
+
     int startX = centerX - messageWidth / 2;
     int startY = centerY - messageHeight / 2;
 
@@ -46,7 +48,12 @@ void Screen::clearPauseMessage()
     {
         for (int x = startX; x < startX + messageWidth; x++)
         {
-            drawSymb(' ', x, y);
+            if (x < FIELD_WIDTH && y < FIELD_HEIGHT)
+            {
+                nextBuffer[y][x] = EMPTY_CELL;
+                activeBuffer[y][x] = EMPTY_CELL;
+                drawSymb(EMPTY_CELL, x, y);
+            }
         }
     }
 }
@@ -56,7 +63,7 @@ void Screen::boardMessage(string message)
     const int messageWidth = 14;
     const int messageHeight = 5;
 
-    int centerX = FIELD_WIDTH / 2;
+    int centerX = GAME_FIELD_WIDTH / 2;
     int centerY = FIELD_HEIGHT / 2;
 
     int startX = centerX - messageWidth / 2;
@@ -101,6 +108,13 @@ void Screen::showPauseMessage()
 
 void Screen::showGameOverMessage()
 {
-    string message = "GAME OVER";
+    string message = "GAME OVER.\nTry again?";
     boardMessage(message);
 }
+
+void Screen::moveCursorToBottom()
+{
+    COORD endPosition = { 0, (SHORT)(FIELD_HEIGHT / 3) };
+    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), endPosition);
+}
+
